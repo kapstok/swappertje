@@ -7,6 +7,8 @@ use libc::{SIGINT, SIGTERM};
 mod elevated;
 mod swap;
 
+static mut SWAPFILES: u64 = 0;
+
 const APP_ID: &str = "be.allersma.Swappertje";
 
 fn main() {
@@ -63,6 +65,7 @@ fn build_scrolled_window() -> ScrolledWindow {
     result
 }
 
+#[allow(static_mut_refs)]
 fn build_new_swap_box() -> Box {
     let entry = Entry::builder()
     .build();
@@ -71,8 +74,25 @@ fn build_new_swap_box() -> Box {
     let dropdown = DropDown::from_strings(&optn);
 
     let btn = Button::with_label(&"Add swap memory");
-    btn.connect_clicked(|_button| {
+    let entry_clone = entry.clone();
+    btn.connect_clicked(move |_button| {
+        let filesize = entry_clone.text().parse::<i64>();
 
+        match filesize {
+            Ok(size) => {
+                unsafe {
+                let mut filename: String = String::from("/opt/swappertje/swp/swappertje_");
+                filename.push_str(&SWAPFILES.to_string());
+                let sz: i64 = size * 1024 * 1024 * 1024;
+                let swapfile = swap::Swapfile::create(&filename, &sz);
+                match swapfile {
+                    Ok(_file) => SWAPFILES += 1,//swpfiles.push(file.clone()),
+                    Err(_) => {}
+                }
+                }
+            },
+            Err(_) => {}
+        }
     });
 
     let result = Box::new(Orientation::Horizontal, 10);
@@ -83,8 +103,22 @@ fn build_new_swap_box() -> Box {
     result
 }
 
+#[allow(static_mut_refs)]
 fn on_quit_app(_app: &Application) {
-    println!("Application is quitting...");
+    unsafe {
+        // let swapfiles_len = swpfiles.len();
+        for i in 0..SWAPFILES {
+            println!("Destroying swapfile {}/{}", i + 1, &SWAPFILES);
+            let mut filename = String::from("/opt/swappertje/swp/swappertje_");
+            filename.push_str(&i.to_string());
+
+            match swap::destroy(&filename) {
+                Ok(_) => {},
+                Err(e) => println!("Failed to destroy {}\nDetails: {:?}", filename, e)
+            }
+        }
+    }
+    println!("Done!");
 }
 
 fn handle_signals(app: &Application) {

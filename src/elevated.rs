@@ -46,8 +46,7 @@ fn ask_password(app: &Application) -> Option<String> {
 
     app.connect_activate(move |app_clone: &Application| {
         let mut msg = String::from("Swappertje requires elevated privileges to work.\n");
-        msg.push_str("Enter the sudo password to use Swappertje with elevated privileges.\n");
-        msg.push_str("Try to run this program as root next time.");
+        msg.push_str("Enter the sudo password to use Swappertje with elevated privileges.");
         let label = Label::new(Some(&msg));
         let entry = PasswordEntry::new();
     
