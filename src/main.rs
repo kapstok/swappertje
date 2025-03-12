@@ -42,11 +42,11 @@ fn build_window(app: &Application) {
 
 fn build_window_layout() -> Box {
     let new_swap_box = build_new_swap_box();
-    let scrolled_win = build_scrolled_window();
+    // let scrolled_win = build_scrolled_window();
 
     let result = Box::new(Orientation::Vertical, 10);
     result.append(&new_swap_box);
-    result.append(&scrolled_win);
+    // result.append(&scrolled_win);
 
     result
 }
@@ -75,6 +75,7 @@ fn build_new_swap_box() -> Box {
 
     let btn = Button::with_label(&"Add swap memory");
     let entry_clone = entry.clone();
+    let dropdown_clone = dropdown.clone();
     btn.connect_clicked(move |_button| {
         let filesize = entry_clone.text().parse::<i64>();
 
@@ -83,10 +84,14 @@ fn build_new_swap_box() -> Box {
                 unsafe {
                 let mut filename: String = String::from("/opt/swappertje/swp/swappertje_");
                 filename.push_str(&SWAPFILES.to_string());
-                let sz: i64 = size * 1024 * 1024 * 1024;
+                let sz: i64 = if dropdown_clone.selected() == 0 {
+                    size * 1024 * 1024
+                } else {
+                    size * 1024 * 1024 * 1024
+                };
                 let swapfile = swap::Swapfile::create(&filename, &sz);
                 match swapfile {
-                    Ok(_file) => SWAPFILES += 1,//swpfiles.push(file.clone()),
+                    Ok(_file) => SWAPFILES += 1,
                     Err(_) => {}
                 }
                 }
@@ -106,7 +111,6 @@ fn build_new_swap_box() -> Box {
 #[allow(static_mut_refs)]
 fn on_quit_app(_app: &Application) {
     unsafe {
-        // let swapfiles_len = swpfiles.len();
         for i in 0..SWAPFILES {
             println!("Destroying swapfile {}/{}", i + 1, &SWAPFILES);
             let mut filename = String::from("/opt/swappertje/swp/swappertje_");
